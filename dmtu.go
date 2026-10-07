@@ -14,11 +14,9 @@ type LatestModFileResult struct {
 }
 
 func main() {
-	// var testDir string = `C:\Users\ktkm\Desktop\test`
+	var testDir string = `F:\h\cg`
 
-    // fmt.Println(findLatestFileModTime(testDir,true))
-
-	updateModTimeWithSubItems(`C:\Users\ktkm\Desktop\test\pappi`)
+    updateAllSubDirs(testDir)
 }
 
 // finds the latest modified time of any item (dir or file) in the target dir
@@ -93,4 +91,24 @@ func updateModTimeWithSubItems(targetDir string) {
 // format for print
 func formatDate(date time.Time) string {
     return date.Format("2006-01-02 15:04")
+}
+
+// call modtime sync on all subdirs of the target dir
+func updateAllSubDirs(targetDir string) {
+    var entries []fs.DirEntry
+    var e error
+
+    entries, e = os.ReadDir(targetDir)
+    if e != nil {
+        panic(e)
+    }
+
+	var entry fs.DirEntry
+    for _, entry = range entries {
+        if !entry.IsDir() {
+            continue
+        }
+
+        updateModTimeWithSubItems(filepath.Join(targetDir, entry.Name()))
+    }
 }
