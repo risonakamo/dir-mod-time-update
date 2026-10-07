@@ -76,6 +76,10 @@ func updateModTimeWithSubItems(targetDir string) {
         panic(e)
     }
 
+	if info.ModTime().Equal(result.ModTime) {
+		return
+	}
+
     e = os.Chtimes(targetDir, info.ModTime(), result.ModTime)
     if e != nil {
         panic(e)
