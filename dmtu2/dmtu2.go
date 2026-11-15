@@ -18,7 +18,9 @@ func main() {
 
 // given target dir, update it's modtime to the latest modtime of any item found in this dir.
 // all subdirs of the dir will also be affected (only updated by their own children, though)
-func updateDirModTimeToLatest(targetDir string,dryRun bool,subDirLevel int) {
+func updateDirModTimeToLatest(targetDir string,dryRun bool,subDirLevel int) time.Time {
+    targetDir=filepath.Clean(targetDir)
+
 	var items []os.DirEntry
 	var e error
 	items,e=os.ReadDir(targetDir)
@@ -38,26 +40,32 @@ func updateDirModTimeToLatest(targetDir string,dryRun bool,subDirLevel int) {
 
     var item os.DirEntry
     for _,item = range items {
-        // if item is a dir, call this func on it, so its modtime gets updated
+        var itemModTime time.Time
+
+        // if item is a dir, call this func on it, and set the item's mod time to the returned result
         if item.IsDir() {
-            updateDirModTimeToLatest(
+            itemModTime=updateDirModTimeToLatest(
                 filepath.Join(targetDir,item.Name()),
                 dryRun,
                 subDirLevel+1,
             )
+
+        // if not a dir, set it to normal fileinfo mod time
+        } else {
+            // get the mod time of the item, which for dirs should be the time after
+            // being properly updated
+            var info fs.FileInfo
+            info,e=item.Info()
+
+            if e!=nil {
+                panic(e)
+            }
+
+            itemModTime=info.ModTime()
         }
 
-        // get the mod time of the item, which for dirs should be the time after
-        // being properly updated
-        var info fs.FileInfo
-        info,e=item.Info()
-
-        if e!=nil {
-            panic(e)
-        }
-
-        if info.ModTime().After(bestModTime) {
-            bestModTime=info.ModTime()
+        if itemModTime.After(bestModTime) {
+            bestModTime=itemModTime
         }
     }
 
@@ -72,7 +80,7 @@ func updateDirModTimeToLatest(targetDir string,dryRun bool,subDirLevel int) {
             )
         }
 
-        return
+        return bestModTime
 
     // otherwise, print out the intended change
     } else {
@@ -87,7 +95,7 @@ func updateDirModTimeToLatest(targetDir string,dryRun bool,subDirLevel int) {
 
     // if dry run, dont make the actual change
     if dryRun {
-        return
+        return bestModTime
     }
 
     e=os.Chtimes(targetDir,time.Now(),bestModTime)
@@ -95,6 +103,8 @@ func updateDirModTimeToLatest(targetDir string,dryRun bool,subDirLevel int) {
     if e!=nil {
         panic(e)
     }
+
+    return bestModTime
 }
 
 // format for print
