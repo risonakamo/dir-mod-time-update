@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -13,7 +14,7 @@ func main() {
 
 // given target dir, update it's modtime to the latest modtime of any item found in this dir.
 // all subdirs of the dir will also be affected (only updated by their own children, though)
-func updateDirModTimeToLatest(targetDir string,dryRun bool) {
+func updateDirModTimeToLatest(targetDir string,dryRun bool,subDirLevel int) {
 	var items []os.DirEntry
 	var e error
 	items,e=os.ReadDir(targetDir)
@@ -38,6 +39,7 @@ func updateDirModTimeToLatest(targetDir string,dryRun bool) {
             updateDirModTimeToLatest(
                 filepath.Join(targetDir,item.Name()),
                 dryRun,
+                subDirLevel+1,
             )
         }
 
@@ -55,11 +57,32 @@ func updateDirModTimeToLatest(targetDir string,dryRun bool) {
         }
     }
 
-    if dryRun {
+    // printing only happens to the target and its immediate children
+    var shouldPrint bool=subDirLevel<=1
+
+    // if didn't change, print and quit
+    if targetDirInfo.ModTime().Equal(bestModTime) {
+        if shouldPrint {
+            fmt.Printf("%s: no change\n",
+                targetDir,
+            )
+        }
+
         return
+
+    // otherwise, print out the intended change
+    } else {
+        if shouldPrint {
+            fmt.Printf("%s: %s -> %s\n",
+                targetDir,
+                formatDate(targetDirInfo.ModTime()),
+                formatDate(bestModTime),
+            )
+        }
     }
 
-    if targetDirInfo.ModTime().Equal(bestModTime) {
+    // if dry run, dont make the actual change
+    if dryRun {
         return
     }
 
