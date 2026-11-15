@@ -5,4 +5,4 @@ HERE=$(dirname $(realpath $BASH_SOURCE))
 cd $HERE
 
 go build -o dmtu2.exe dmtu2.go
-./dmtu2.exe
+./dmtu2.exe -t "E:/h/cg 2026-10-22"

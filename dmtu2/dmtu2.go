@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/fs"
 	"os"
@@ -8,10 +9,18 @@ import (
 	"time"
 )
 
+// args from cli
+type CliArgs struct {
+    DryRun bool
+    TargetPath string
+}
+
 func main() {
+    var args CliArgs=getCliArgs()
+
     updateDirModTimeToLatest(
-        "C:/Users/ktkm2/Desktop/temp h/mirror/cg",
-        true,
+        args.TargetPath,
+        args.DryRun,
         0,
     )
 }
@@ -110,4 +119,23 @@ func updateDirModTimeToLatest(targetDir string,dryRun bool,subDirLevel int) time
 // format for print
 func formatDate(date time.Time) string {
     return date.Format("2006-01-02 15:04:05")
+}
+
+// get cli args
+func getCliArgs() CliArgs {
+    var dryRun *bool = flag.Bool("d", false, "dry run (no changes)")
+    var targetPath *string = flag.String("t", "", "target directory (required)")
+
+    flag.Parse()
+
+    if *targetPath == "" {
+        fmt.Fprintln(os.Stderr, "Error: target directory (-t) is required.")
+        flag.Usage()
+        os.Exit(1)
+    }
+
+    return CliArgs{
+        DryRun:     *dryRun,
+        TargetPath: filepath.Clean(*targetPath),
+    }
 }
