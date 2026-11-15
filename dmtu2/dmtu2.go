@@ -9,7 +9,11 @@ import (
 )
 
 func main() {
-
+    updateDirModTimeToLatest(
+        "C:/Users/ktkm2/Desktop/temp h/mirror/cg",
+        true,
+        0,
+    )
 }
 
 // given target dir, update it's modtime to the latest modtime of any item found in this dir.
@@ -95,5 +99,5 @@ func updateDirModTimeToLatest(targetDir string,dryRun bool,subDirLevel int) {
 
 // format for print
 func formatDate(date time.Time) string {
-    return date.Format("2006-01-02 15:04")
+    return date.Format("2006-01-02 15:04:05")
 }
